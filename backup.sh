@@ -8,8 +8,7 @@ set -e
 trap 'catchError' ERR
 
 function catchError {
-    echo "An error occurred during the backup of $DB."
-    curl -s "${PROXY_QUIT_URL}" # Attempt to properly shut down the proxy
+    echo "An error occurred during the backup of $DB." # maybe proxy is not ready
     exit 1
 }
 

@@ -49,6 +49,11 @@ your-docker-image
 
 ### Deployment in Kubernetes
 
+Create a read-only mysql user for the databases you want to backup:
+
+```sql
+
+
 Deploy this container in a Kubernetes cluster as part of a CronJob. Refer to the [deployment](./deployment/) directory for a Kubernetes deployment example.
 
 ```sh
