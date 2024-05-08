@@ -1,16 +1,16 @@
 # MySQL Backup Docker Container
 
-This Docker container is designed to backup MySQL databases and upload the backups to Google Cloud Storage. It also handles the management of a Cloud SQL Proxy connection to securely connect to Google Cloud SQL instances without having to expose them publicly.
+This Docker container is designed to backup MySQL databases and upload the backups to Google Cloud Storage. It also handles the management of a Cloud SQL Proxy connection to securely connect to Google Cloud SQL instances without exposing them publicly.
 
 ## Features
 
 - **Database Backups**: Supports backing up multiple databases configured via environment variables.
-- **Google Cloud Storage**: Uploads database backups directly to a configured GCS bucket.
-- **Cloud SQL Proxy Management**: Handles the lifecycle of a Cloud SQL Proxy connection to secure database connections.
+- **Google Cloud Storage**: Automatically uploads database backups to a specified GCS bucket.
+- **Cloud SQL Proxy Management**: Manages the lifecycle of a Cloud SQL Proxy connection to secure database access.
 
 ## Prerequisites
 
-- A Google Cloud account and a configured GCS bucket.
+- A Google Cloud account with a configured GCS bucket.
 - Access to a Google Cloud SQL instance or any MySQL server.
 - Docker installed on your machine or Kubernetes cluster.
 
@@ -18,23 +18,26 @@ This Docker container is designed to backup MySQL databases and upload the backu
 
 ### Environment Variables
 
-This container uses the following environment variables:
+This container relies on several environment variables for operation:
 
-- `MYSQL_HOST`: The hostname of the MySQL server.
-- `MYSQL_USER`: The username for the MySQL database.
-- `MYSQL_PASSWORD`: The password for the MySQL database (use Kubernetes secrets for Kubernetes deployments).
-- `MYSQL_DATABASES`: Comma-separated list of databases to backup.
-- `GCS_BUCKET`: The Google Cloud Storage bucket where backups will be stored.
-- `PROXY_PORT`: The port on which the MySQL server or proxy is accessible (default is 3306).
-- `PROXY_QUIT_URL`: URL to send the quit command to Cloud SQL Proxy.
+- `MYSQL_HOST` (**Required**): The hostname of the MySQL server.
+- `MYSQL_USER` (**Required**): The username for the MySQL database.
+- `MYSQL_PASSWORD` (**Required**): The password for the MySQL database (recommended to use Kubernetes secrets for Kubernetes deployments).
+- `MYSQL_DATABASES` (**Required**): Comma-separated list of databases to backup.
+- `GCS_BUCKET` (**Required**): The Google Cloud Storage bucket for storing backups.
+- `GCS_BUCKET_DIR` (**Required**): The directory within the GCS bucket to store backups.
+- `PROXY_PORT` (**Required**): The port on which the MySQL server or proxy is accessible (default 3306).
+- `PROXY_QUIT_URL` (**Required**): URL to send the quit command to the Cloud SQL Proxy.
 
 ### Volumes
 
-- `/backup`: This directory is where the database dumps are temporarily stored before being uploaded to GCS.
+- `/backup`: The directory where database dumps are temporarily stored before being uploaded to GCS.
 
-## Using the Docker Container
+## Usage
 
 ### Running Locally
+
+To run the Docker container locally:
 
 ```sh
 docker run -e MYSQL_HOST='your-mysql-host' -e MYSQL_USER='user' -e MYSQL_PASSWORD='password' \
@@ -46,11 +49,39 @@ your-docker-image
 
 ### Deployment in Kubernetes
 
-You can deploy this container in a Kubernetes cluster as part of a CronJob. Refer to the included `kubernetes-cronjob.yaml` file for a sample deployment configuration.
+Deploy this container in a Kubernetes cluster as part of a CronJob. Refer to the [deployment](./deployment/) directory for a Kubernetes deployment example.
+
+```sh
+kubectl apply -k deployment/
+```
+
+### GCP Service Account & IAM Role
+
+Set up a service account in GCP and assign necessary roles for Cloud SQL and GCS access:
+
+```sh
+gcloud iam service-accounts create cloudsql-backup-sa --display-name "Cloud SQL Backup Service Account"
+
+gcloud projects add-iam-policy-binding your-project-id \
+--member serviceAccount:cloudsql-backup-sa@your-project-id.iam.gserviceaccount.com \
+--role roles/cloudsql.client
+
+gcloud projects add-iam-policy-binding your-project-id \
+--member serviceAccount:cloudsql-backup-sa@your-project-id.iam.gserviceaccount.com \
+--role roles/storage.objectAdmin
+```
+
+Bind this service account to your Kubernetes service account:
+
+```sh
+gcloud iam service-accounts add-iam-policy-binding \
+--role roles/iam.workloadIdentityUser \
+--member "serviceAccount:your-project-id.svc.id.goog[your-namespace/your-service-account]"
+```
 
 ## Building the Docker Image
 
-To build this image from the Dockerfile:
+To build the image from the Dockerfile:
 
 ```sh
 docker build -t your-custom-tag .
@@ -58,7 +89,7 @@ docker build -t your-custom-tag .
 
 ## Contributing
 
-Contributions to this project are welcome! Please fork the repository and submit a pull request with your changes or improvements.
+We welcome contributions! Please fork the repository and submit pull requests with your changes or improvements.
 
 ## License
 
@@ -66,12 +97,4 @@ Specify the license under which the project is available. Common licenses for op
 
 ## Contact Information
 
-For help or issues, please submit an issue to the project's GitHub repository or contact the maintainer at `support@natron.io`.
-
-
-### Notes on the README
-
-- **Detailed Instructions**: The README provides instructions on how to use the Docker image, including environment variables, volume mappings, and running the container.
-- **Example Commands**: Commands for running the container both locally and within a Kubernetes environment are given to ease the usage.
-- **Contribution Guidelines**: Encouraging contributions helps in the growth and maintenance of the project.
-- **License**: It's important to specify a license if the project is open source. This governs how the project can be used and modified by others.
+For help or issues related to this project, please submit an issue to our GitHub repository or contact the maintainer at `support@natron.io`.

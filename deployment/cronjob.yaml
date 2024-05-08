@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-gcp-mysql
+  namespace: mysql-backups
+spec:
+  ttlSecondsAfterFinished: null
+  schedule: "0 5 * * *"
+  concurrencyPolicy: Forbid
+  suspend: false
+  jobTemplate:
+    metadata:
+      labels:
+        app: backup-gcp-mysql
+    spec:
+      parallelism: 1
+      completions: 1
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: backup-gcp-mysql
+        spec:
+          containers:
+          - name: backup-job
+            image: ghcr.io/natrontech/gcp-mysql-backup:latest
+            env:
+              - name: MYSQL_HOST
+                value: "127.0.0.1"
+              - name: PROXY_PORT
+                value: "3306"
+              - name: MYSQL_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: backup-gcp-mysql
+                    key: MYSQL_USER
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: backup-gcp-mysql
+                    key: MYSQL_PASSWORD
+              - name: MYSQL_DATABASES
+                value: "db1, db2, db3" # Add more databases separated by comma
+              - name: GCP_BUCKET
+                value: "backups"
+              - name: GCP_BUCKET_DIR
+                value: "mysql"
+              - name: PROXY_QUIT_URL
+                value: "http://localhost:9091/quitquitquit"
+          - name: cloud-sql-proxy
+            image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.0
+            args:
+              - '--exit-zero-on-sigterm'
+              - '--quitquitquit'
+              - '--port=3306'
+              - project-id:region:instance-name # Replace with your project-id, region and instance name
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 250m
+                memory: 256Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            imagePullPolicy: Always
+            securityContext:
+              runAsNonRoot: true
+          restartPolicy: OnFailure
+          terminationGracePeriodSeconds: 30
+          dnsPolicy: ClusterFirst
+          serviceAccountName: backup-gcp-mysql
+          serviceAccount: backup-gcp-mysql
+          automountServiceAccountToken: true
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 3000
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          nodeSelector:
+            cloud.google.com/gke-nodepool: system-pool
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
