@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup
+  namespace: default
+spec:
+  schedule: "0 5 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: db-backup
+            image: ghcr.io/natrontech/gcp-mysql-backup:latest  # Update with the correct path to your image
+            env:
+            - name: MYSQL_HOST
+              value: "127.0.0.1"
+            - name: MYSQL_DATABASES
+              value: "db1,db2,db3"  # List of databases to backup
+            - name: MYSQL_USER
+              value: "application-backend-demo"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: service-passwords
+                  key: DB_PASSWORD
+            - name: GCS_BUCKET
+              value: "production-mysql-backups"
+          restartPolicy: OnFailure
