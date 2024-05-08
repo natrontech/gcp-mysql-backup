@@ -20,7 +20,7 @@ for DB in "${DB_ARRAY[@]}"; do
 
     # Upload the backup to Google Cloud Storage
     echo "Uploading $DB backup to Google Cloud Storage..."
-    gsutil cp "${FILENAME}" "gs://${GCS_BUCKET}/${DB}/"
+    gsutil cp "${FILENAME}" "gs://${GCS_BUCKET}/${GCS_BUCKET_DIR}/"
 
     echo "Backup for $DB completed successfully."
 done
