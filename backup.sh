@@ -1,5 +1,5 @@
 #!/bin/bash
-# Environment variables: MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASES, GCS_BUCKET, PROXY_PORT=3306, PROXY_QUIT_URL
+# Environment variables: MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASES, GCS_BUCKET, PROXY_PORT
 
 # Exit on any error
 set -e
@@ -11,23 +11,26 @@ IFS=',' read -ra DB_ARRAY <<< "$MYSQL_DATABASES"
 for DB in "${DB_ARRAY[@]}"; do
     echo "Starting backup for database: $DB"
 
-    # Dump the database into a SQL file
+    # Construct filename for backup
     FILENAME="/backup/${DB}_backup_$(date +%Y%m%d%H%M%S).sql"
-    mysqldump -h$MYSQL_HOST -P$PROXY_PORT -u$MYSQL_USER -p$MYSQL_PASSWORD $DB > $FILENAME
+
+    # Dump the database into a SQL file
+    # Ensure proper spacing and use of command options
+    mysqldump -h "${MYSQL_HOST}" -P "${PROXY_PORT}" -u "${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${DB}" > "${FILENAME}"
 
     # Upload the backup to Google Cloud Storage
     echo "Uploading $DB backup to Google Cloud Storage..."
-    gsutil cp $FILENAME gs://$GCS_BUCKET/$DB/
+    gsutil cp "${FILENAME}" "gs://${GCS_BUCKET}/${DB}/"
 
     echo "Backup for $DB completed successfully."
 done
 
-# Give time for all operations to complete
+# Wait for a minute to allow all operations to complete
 echo "Waiting for final operations to complete..."
 sleep 60
 
-# Kill the Cloud SQL proxy process using the provided URL
+# Use wget to send a quit command to the Cloud SQL proxy
 echo "Terminating Cloud SQL proxy..."
-wget -qO- $PROXY_QUIT_URL
+wget -qO- "${PROXY_QUIT_URL}"
 
 echo "Backup and shutdown process completed."
