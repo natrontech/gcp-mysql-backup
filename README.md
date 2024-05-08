@@ -52,7 +52,9 @@ your-docker-image
 Create a read-only mysql user for the databases you want to backup:
 
 ```sql
-
+CREATE USER 'backup'@'%' IDENTIFIED BY 'password';
+GRANT SELECT, LOCK TABLES ON *.* TO 'backup'@'%';
+```
 
 Deploy this container in a Kubernetes cluster as part of a CronJob. Refer to the [deployment](./deployment/) directory for a Kubernetes deployment example.
 
