@@ -2,7 +2,7 @@
 FROM google/cloud-sdk:latest
 
 # Install MySQL client
-RUN apt-get update && apt-get install -y default-mysql-client
+RUN apt-get update && apt-get install -y default-mysql-client wget
 
 # Create a non-root user and group
 # Note: Ensure the user and group IDs do not conflict with IDs on the host or in other containers
