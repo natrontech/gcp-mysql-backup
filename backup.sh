@@ -1,36 +1,32 @@
 #!/bin/bash
-# Environment variables: MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASES, GCS_BUCKET, PROXY_PORT
+# Enable parallel composite uploads
+echo "[GSUtil]" >>~/.boto
+echo "parallel_composite_upload_threshold = 150M" >>~/.boto
 
-# Exit on any error
 set -e
 
-# Split the database names separated by commas (also when only one database is provided)
-IFS=',' read -ra DB_ARRAY <<< "$MYSQL_DATABASES"
+trap 'catchError' ERR
 
-# Loop over each database name and perform a backup
+function catchError {
+    echo "An error occurred during the backup of $DB."
+    curl -s "${PROXY_QUIT_URL}" # Attempt to properly shut down the proxy
+    exit 1
+}
+
+IFS=',' read -ra DB_ARRAY <<<"$MYSQL_DATABASES"
+
 for DB in "${DB_ARRAY[@]}"; do
     echo "Starting backup for database: $DB"
-
-    # Construct filename for backup
     FILENAME="/backup/${DB}_backup_$(date +%Y%m%d%H%M%S).sql"
-
-    # Dump the database into a SQL file
-    # Ensure proper spacing and use of command options
-    mysqldump -h "${MYSQL_HOST}" -P "${PROXY_PORT}" -u "${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${DB}" > "${FILENAME}"
-
-    # Upload the backup to Google Cloud Storage
+    mysqldump -h "${MYSQL_HOST}" -P "${PROXY_PORT}" -u "${MYSQL_USER}" -p"${MYSQL_PASSWORD}" --single-transaction --quick --compress "${DB}" >"${FILENAME}"
     echo "Uploading $DB backup to Google Cloud Storage..."
     gsutil cp "${FILENAME}" "gs://${GCS_BUCKET}/${GCS_BUCKET_DIR}/"
-
     echo "Backup for $DB completed successfully."
 done
 
-# Wait for a minute to allow all operations to complete
 echo "Waiting for final operations to complete..."
 sleep 60
-
-# Use wget to send a quit command to the Cloud SQL proxy
 echo "Terminating Cloud SQL proxy..."
-wget -qO- "${PROXY_QUIT_URL}"
+curl -s "${PROXY_QUIT_URL}"
 
 echo "Backup and shutdown process completed."
