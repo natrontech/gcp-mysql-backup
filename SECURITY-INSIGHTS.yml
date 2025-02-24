@@ -45,6 +45,6 @@ vulnerability-reporting:
 dependencies:
   third-party-packages: false
   sbom:
-  - sbom-file: https://github.com/natrontech/gcp-mysql-backup/pkgs/container/sbom
+  - sbom-file: https://github.com/natrontech/gcp-mysql-backup/pkgs/container/gcp-mysql-backup
     sbom-format: CycloneDX
     sbom-url: https://github.com/natrontech/gcp-mysql-backup/blob/main/SECURITY.md#sbom
