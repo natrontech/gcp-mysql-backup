@@ -14,11 +14,11 @@ Following workflows are implemented in the repository.
 
 The release workflow includes multiple jobs to create a release of the project. Following jobs are implemented:
 
-| Job                               | GitHub Action                                                                                                              | Description                                                                                                          |
-| :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| `image-provenance`                | [generator_container_slsa3](https://github.com/slsa-framework/slsa-github-generator/tree/main/internal/builders/container) | Generates provenance for the container images                                                                        |
-| `verification-with-cosign`        | -                                                                                                                          | Verifying the cryptographic signatures on provenance for the container image                                         |
-| `verification-with-slsa-verifier` | -                                                                                                                          | Verifying the cryptographic signatures on provenance for all binary releases (only possible if release is published) |
+| Job                        | GitHub Action                                                                                                              | Description                                                                  |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| `docker-publish`           | -                                                                                                                          | Build and sign the container image, create and sign the SBOM with Syft       |
+| `image-provenance`         | [generator_container_slsa3](https://github.com/slsa-framework/slsa-github-generator/tree/main/internal/builders/container) | Generates provenance for the container images                                |
+| `verification-with-cosign` | -                                                                                                                          | Verifying the cryptographic signatures on provenance for the container image |
 
 ### Container Release
 

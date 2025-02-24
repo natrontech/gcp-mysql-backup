@@ -48,7 +48,7 @@ spec:
               - name: PROXY_QUIT_URL
                 value: "http://localhost:9091/quitquitquit"
           - name: cloud-sql-proxy
-            image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.0
+            image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2
             args:
               - '--exit-zero-on-sigterm'
               - '--quitquitquit'
@@ -61,14 +61,10 @@ spec:
               requests:
                 cpu: 250m
                 memory: 256Mi
-            terminationMessagePath: /dev/termination-log
-            terminationMessagePolicy: File
             imagePullPolicy: Always
             securityContext:
               runAsNonRoot: true
           restartPolicy: OnFailure
-          terminationGracePeriodSeconds: 30
-          dnsPolicy: ClusterFirst
           serviceAccountName: backup-gcp-mysql
           serviceAccount: backup-gcp-mysql
           automountServiceAccountToken: true
@@ -78,7 +74,5 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-          nodeSelector:
-            cloud.google.com/gke-nodepool: system-pool
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5

@@ -25,6 +25,9 @@ All of the following commands require the `VERSION` environment variable to be s
 ```bash
 # get the latest release
 export VERSION=$(curl -s "https://api.github.com/repos/natrontech/gcp-mysql-backup/releases/latest" | jq -r '.tag_name')
+
+# or use the latest tag
+export VERSION=latest
 ```
 
 ### Verify provenance of container images
@@ -37,13 +40,12 @@ The `slsa-verifier` can also verify docker images. Verification can be done by t
 IMAGE=ghcr.io/natrontech/gcp-mysql-backup:$VERSION
 
 # get the image digest and append it to the image name
-#   e.g. ghcr.io/natrontech/gcp-mysql-backup:v0.2.0@sha256:...
+#   e.g. ghcr.io/natrontech/gcp-mysql-backup:latest@sha256:...
 IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
 
 # verify the image
 slsa-verifier verify-image \
   --source-uri github.com/natrontech/gcp-mysql-backup \
-  --provenance-repository ghcr.io/natrontech/signatures \
   --source-versioned-tag $VERSION \
   $IMAGE
 ```
@@ -59,7 +61,7 @@ As an alternative to the SLSA verifier, you can use `cosign` to verify the prove
 curl -L -O https://raw.githubusercontent.com/natrontech/gcp-mysql-backup/main/policy.cue
 
 # verify the image with cosign
-COSIGN_REPOSITORY=ghcr.io/natrontech/signatures cosign verify-attestation \
+cosign verify-attestation \
   --type slsaprovenance \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
@@ -73,9 +75,10 @@ The container images are additionally signed with cosign. The signature can be v
 **Important**: only the multi-arch image is signed, not the individual platform images.
 
 ```bash
-COSIGN_REPOSITORY=ghcr.io/natrontech/signatures cosign verify \
+cosign verify \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/heads/main$' \
   $IMAGE | jq
 ```
 
@@ -88,21 +91,18 @@ The Software Bill of Materials (SBOM) is generated in CycloneDX JSON format for 
 
 #### Container images
 
-The SBOMs of the container is attestated with Cosign and uploaded to the `ghcr.io/natrontech/sbom` repository. The SBOMs can be verified with the `cosign` binary.
+The SBOMs of the container is attestated with Cosign. The SBOMs can be verified with the `cosign` binary.
 
 **Important**: Only the multi-arch image has a SBOM, not the individual platform images.
 
 **Verify provenance of the SBOM**
 
 ```bash
-# download policy-sbom.cue
-curl -L -O https://raw.githubusercontent.com/natrontech/gcp-mysql-backup/main/policy-sbom.cue
-
-COSIGN_REPOSITORY=ghcr.io/natrontech/sbom cosign verify-attestation \
+cosign verify-attestation \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
-  --policy policy-sbom.cue \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/heads/main$' \
   $IMAGE | jq -r '.payload' | base64 -d | jq
 ```
 
@@ -115,6 +115,6 @@ COSIGN_REPOSITORY=ghcr.io/natrontech/sbom cosign verify-attestation \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
-  --policy policy-sbom.cue \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/main$' \
   $IMAGE | jq -r '.payload' | base64 -d | jq -r '.predicate' > sbom.json
 ```
