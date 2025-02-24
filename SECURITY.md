@@ -76,8 +76,7 @@ The container images are additionally signed with cosign. The signature can be v
 ```bash
 cosign verify \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/heads/main$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
   $IMAGE | jq
 ```
 
@@ -100,8 +99,7 @@ The SBOMs of the container is attestated with Cosign. The SBOMs can be verified 
 cosign verify-attestation \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/heads/main$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
   $IMAGE | jq -r '.payload' | base64 -d | jq
 ```
 
@@ -113,7 +111,6 @@ If you want to download the SBOM of the container image, you can use the followi
 COSIGN_REPOSITORY=ghcr.io/natrontech/sbom cosign verify-attestation \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/main$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
   $IMAGE | jq -r '.payload' | base64 -d | jq -r '.predicate' > sbom.json
 ```
