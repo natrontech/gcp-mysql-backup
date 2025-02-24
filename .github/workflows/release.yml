@@ -49,7 +49,7 @@ jobs:
         uses: docker/build-push-action@0adf9959216b96bec444f325f1e493d4aa344497 # v6.14.0
         with:
           context: .
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/natrontech/gcp-mysql-backup:feat-jfu
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -57,7 +57,7 @@ jobs:
       - name: Syft SBOM generation
         uses: anchore/sbom-action@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0.18.0
         with:
-          image: ${{ steps.meta.outputs.tags }}
+          image: ghcr.io/natrontech/gcp-mysql-backup@${{ steps.build-and-push.outputs.digest }}
           artifact-name: gcp-mysql-backup-bom.cdx.json
           format: cyclonedx-json
           upload-artifact: false
@@ -71,7 +71,7 @@ jobs:
             -a "repo=${{ github.repository }}" \
             -a "workflow=${{ github.workflow }}" \
             -a "ref=${{ github.sha }}" \
-            ${{ steps.build-and-push.outputs.digest }}
+            ghcr.io/natrontech/gcp-mysql-backup@${{ steps.build-and-push.outputs.digest }}
       - name: Cosign sign sbom
         # env:
         #   COSIGN_REPOSITORY: ghcr.io/${{ github.repository_owner }}/sbom
@@ -80,7 +80,7 @@ jobs:
             --predicate ./gcp-mysql-backup-bom.cdx.json \
             --type cyclonedx \
             --oidc-provider github-actions \
-            ${{ steps.build-and-push.outputs.digest }}
+            ghcr.io/natrontech/gcp-mysql-backup@${{ steps.build-and-push.outputs.digest }}
 
   image-provenance:
     needs: [docker-publish]
