@@ -1,0 +1,159 @@
+name: release
+
+on:
+  schedule:
+    - cron: '20 14 * * *'
+  push:
+    branches: [ "feat/jfu" ]
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  docker-publish:
+    outputs:
+      digest: ${{ steps.build-and-push.outputs.digest }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write # sign archives with cosign
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3.9.0
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
+        with:
+          images: ghcr.io/${{ github.repository }}
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@0adf9959216b96bec444f325f1e493d4aa344497 # v6.14.0
+        with:
+          context: .
+          tags: ${{ steps.meta.outputs.tags }}
+          push: true
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Syft SBOM generation
+        uses: anchore/sbom-action@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0.18.0
+        with:
+          image: ${{ steps.meta.outputs.tags }}
+          artifact-name: gcp-mysql-backup-bom.cdx.json
+          format: cyclonedx-json
+          upload-artifact: false
+          upload-release-assets: false
+      - name: Cosign sign image
+        # env:
+        #   COSIGN_REPOSITORY: ghcr.io/${{ github.repository_owner }}/signatures
+        run: |
+          set -e
+          cosign sign --yes \
+            -a "repo=${{ github.repository }}" \
+            -a "workflow=${{ github.workflow }}" \
+            -a "ref=${{ github.sha }}" \
+            ${{ steps.build-and-push.outputs.digest }}
+      - name: Cosign sign sbom
+        # env:
+        #   COSIGN_REPOSITORY: ghcr.io/${{ github.repository_owner }}/sbom
+        run: |
+          cosign attest --yes \
+            --predicate ./gcp-mysql-backup-bom.cdx.json \
+            --type cyclonedx \
+            --oidc-provider github-actions \
+            ${{ steps.build-and-push.outputs.digest }}
+
+  image-provenance:
+    needs: [docker-publish]
+    permissions:
+      actions: read
+      id-token: write
+      packages: write
+    # MUST be referenced by tag (see https://github.com/slsa-framework/slsa-github-generator/?tab=readme-ov-file#referencing-slsa-builders-and-generators)
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+    with:
+      image: ghcr.io/${{ github.repository_owner }}/gcp-mysql-backup
+      digest: ${{ needs.docker-publish.outputs.digest }}
+      registry-username: ${{ github.actor }}
+      provenance-registry-username: ${{ github.actor }}
+      provenance-repository: ghcr.io/${{ github.repository_owner }}/signatures
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+      provenance-registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+  # verification-with-cosign:
+  #   needs: [docker-publish, image-provenance]
+  #   runs-on: ubuntu-latest
+  #   permissions: read-all
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #       with:
+  #         persist-credentials: false
+  #         fetch-depth: 0
+
+  #     - name: Login
+  #       uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+
+  #     - name: Install Cosign
+  #       uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+
+  #     - name: Verify provenance of image
+  #       env:
+  #         IMAGE: ghcr.io/${{ github.repository_owner }}/gcp-mysql-backup
+  #         DIGEST: ${{ needs.docker-publish.outputs.digest }}
+  #         REPOSITORY: ${{ github.repository_owner }}
+  #       run: |
+  #         COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/signatures cosign verify-attestation \
+  #           --type slsaprovenance \
+  #           --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  #           --certificate-identity-regexp '^https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
+  #           --policy policy.cue \
+  #           $IMAGE@$DIGEST
+
+  #     - name: Verify signature of image
+  #       env:
+  #         IMAGE: ghcr.io/${{ github.repository_owner }}/gcp-mysql-backup
+  #         DIGEST: ${{ needs.docker-publish.outputs.digest }}
+  #         REPOSITORY: ${{ github.repository_owner }}
+  #       run: |
+  #         COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/signatures cosign verify \
+  #           --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  #           --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
+  #           $IMAGE@$DIGEST
+
+  #     - name: Verify sbom of image
+  #       env:
+  #         IMAGE: ghcr.io/${{ github.repository_owner }}/gcp-mysql-backup
+  #         DIGEST: ${{ needs.docker-publish.outputs.digest }}
+  #         REPOSITORY: ${{ github.repository_owner }}
+  #       run: |
+  #         COSIGN_REPOSITORY=ghcr.io/$REPOSITORY/sbom cosign verify-attestation \
+  #           --type cyclonedx \
+  #           --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  #           --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
+  #           --policy policy-sbom.cue \
+  #           $IMAGE@$DIGEST

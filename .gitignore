@@ -1,2 +1,18 @@
+# swap
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+# session
+Session.vim
+# temporary
+.netrwhist
+*~
+# auto-generated tag files
+tags
+# Apple
 .DS_Store
-*.local.yaml
+# vscode
+.vscode/
+.decrypted~*
+.env
+bin
+.secrets/

@@ -1,0 +1,26 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks.git
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude_types: ['markdown']
+      - id: trailing-whitespace
+        exclude_types: ['markdown']
+      - id: mixed-line-ending
+      - id: fix-byte-order-marker
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/bridgecrewio/checkov.git
+    rev: 3.2.373
+    hooks:
+      - id: checkov_container
+        args:
+          - --framework=dockerfile
+          - --file=Dockerfile
+          - --skip-check=CKV_DOCKER_2,CKV_DOCKER_7
+        files: Dockerfile

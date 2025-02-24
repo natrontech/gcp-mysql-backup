@@ -1,5 +1,10 @@
 # MySQL Backup Docker Container
 
+[![license](https://img.shields.io/github/license/natrontech/gcp-mysql-backup)](https://github.com/natrontech/gcp-mysql-backup/blob/main/LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/natrontech/gcp-mysql-backup/badge)](https://securityscorecards.dev/viewer/?uri=github.com/natrontech/gcp-mysql-backup)
+[![release](https://img.shields.io/github/v/release/natrontech/gcp-mysql-backup)](https://github.com/natrontech/gcp-mysql-backup/releases)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
+
 This Docker container is designed to backup MySQL databases and upload the backups to Google Cloud Storage. It also handles the management of a Cloud SQL Proxy connection to securely connect to Google Cloud SQL instances without exposing them publicly.
 
 ## Features
@@ -105,3 +110,9 @@ Specify the license under which the project is available. Common licenses for op
 ## Contact Information
 
 For help or issues related to this project, please submit an issue to our GitHub repository or contact the maintainer at `support@natron.io`.
+
+## Release
+
+Each release of the application includes the container images. 
+
+The release workflow creates provenance for its builds using the [SLSA standard](https://slsa.dev), which conforms to the [Level 3 specification](https://slsa.dev/spec/v1.0/levels#build-l3). Each artifact can be verified using the `slsa-verifier` or `cosign` tool (see [Release verification](SECURITY.md#release-verification)).
