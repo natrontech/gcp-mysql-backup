@@ -4,8 +4,6 @@ on:
   workflow_dispatch:
   schedule:
   - cron: "0 0 * * *"  # every day at midnight, utc
-  push:
-    branches: [ "feat/jfu" ]
 
 permissions: {}
 
@@ -22,4 +20,4 @@ jobs:
         image-names: "gcp-mysql-backup"
         cut-off: 2w
         tag-selection: untagged
-        dry-run: true
+        dry-run: false
