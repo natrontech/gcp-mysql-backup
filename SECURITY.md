@@ -46,7 +46,6 @@ IMAGE="${IMAGE}@"$(crane digest "${IMAGE}")
 # verify the image
 slsa-verifier verify-image \
   --source-uri github.com/natrontech/gcp-mysql-backup \
-  --source-versioned-tag $VERSION \
   $IMAGE
 ```
 

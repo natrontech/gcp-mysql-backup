@@ -1,0 +1,25 @@
+name: GHCR cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: "0 0 * * *"  # every day at midnight, utc
+  push:
+    branches: [ "feat/jfu" ]
+
+permissions: {}
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    name: Delete old test images
+    steps:
+    - name: cleanup ghcr
+      uses: snok/container-retention-policy@v3.0.0
+      with:
+        account: natrontech
+        token: ${{ secrets.GITHUB_TOKEN }}
+        image-names: "gcp-mysql-backup"
+        cut-off: 2w
+        tag-selection: untagged
+        dry-run: true
