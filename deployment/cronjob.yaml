@@ -57,7 +57,7 @@ spec:
               - name: GCP_BUCKET_DIR
                 value: "mysql"
               - name: PROXY_QUIT_URL
-                value: "http://localhost:3306/quitquitquit"
+                value: "http://localhost:9091/quitquitquit"
           - name: cloud-sql-proxy
             image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2
             imagePullPolicy: Always

@@ -47,7 +47,7 @@ To run the Docker container locally:
 ```sh
 docker run -e MYSQL_HOST='your-mysql-host' -e MYSQL_PORT='3306' -e MYSQL_USER='user' -e MYSQL_PASSWORD='password' \
 -e MYSQL_DATABASES='db1,db2' -e GCS_BUCKET='your-gcs-bucket' \
--e PROXY_QUIT_URL='http://localhost:3306/quitquitquit' \
+-e PROXY_QUIT_URL='http://localhost:9091/quitquitquit' \
 -v your-local-backup-dir:/backup \
 your-docker-image
 ```
