@@ -6,6 +6,8 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - main
   ## uncomment if you want to release on PR merge
   # pull_request:
   #   branches:
@@ -49,13 +51,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            # If triggered by a schedule on main -> Tag as latest
-            type=raw,value=latest,enable={{ github.event_name == 'schedule' && github.ref_name == 'main' }}
-
-            # If tag push (e.g., v1.2.3) -> Create both versioned tag and latest
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # tag
             type=ref,event=tag
-            type=raw,value=latest,enable={{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-
             # If pull request event
             type=ref,event=pr
       - name: Build and push Docker image
