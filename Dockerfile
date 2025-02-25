@@ -1,16 +1,17 @@
-FROM google/cloud-sdk:latest
+FROM google/cloud-sdk:alpine
 
-RUN apt-get update && apt-get install -y default-mysql-client curl
+# Install dependencies in one layer and clean up apt caches
+RUN apk update && \
+    apk add --no-cache mysql-client curl
 
-RUN groupadd -r mysqlbackup -g 3000 && \
-    useradd -r -g mysqlbackup -u 1001 -m -d /backup mysqlbackup
+# Create a dedicated non-root user and group
+RUN addgroup -g 3000 mysqlbackup && \
+    adduser -D -u 1001 -G mysqlbackup -h /backup mysqlbackup
 
 WORKDIR /backup
 
-RUN chown mysqlbackup:mysqlbackup /backup
-COPY backup.sh /backup/backup.sh
+COPY --chown=mysqlbackup:mysqlbackup backup.sh /backup/backup.sh
 RUN chmod +x /backup/backup.sh
-RUN chown mysqlbackup:mysqlbackup /backup/backup.sh
 
 USER mysqlbackup
 
