@@ -7,7 +7,6 @@ Following workflows are implemented in the repository.
 
 | Workflow                         | Jobs                            | Trigger                                                       | SARIF upload | Description                                                              |
 | :------------------------------- | :------------------------------ | :------------------------------------------------------------ | :----------- | ------------------------------------------------------------------------ |
-| [cleanup.yml](./cleanup.yml)     | `clean`                         | workflow_dispatch, cron `0 0 * * *`                           | -            | Cleanup all untagged tags from GHCR repository which are older than `2w` |
 | [release.yml](./release.yml)     | see [release chapter](#release) | push tag `v*`, cron `20 14 * * *`, pr on `main`               | -            | Create release with go binaries and docker container                     |
 | [scorecard.yml](./scorecard.yml) | `analyze`                       | push to `main`, cron: `00 14 * * 1`, change branch protection | yes          | Create OpenSSF analysis and create project score                         |
 
