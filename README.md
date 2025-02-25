@@ -91,26 +91,6 @@ gcloud iam service-accounts add-iam-policy-binding \
 --member "serviceAccount:your-project-id.svc.id.goog[your-namespace/your-service-account]"
 ```
 
-## Building the Docker Image
-
-To build the image from the Dockerfile:
-
-```sh
-docker build -t your-custom-tag .
-```
-
-## Contributing
-
-We welcome contributions! Please fork the repository and submit pull requests with your changes or improvements.
-
-## License
-
-Specify the license under which the project is available. Common licenses for open source projects include MIT, Apache 2.0, etc.
-
-## Contact Information
-
-For help or issues related to this project, please submit an issue to our GitHub repository or contact the maintainer at `support@natron.io`.
-
 ## Release
 
 Each release of the application includes the container images. 

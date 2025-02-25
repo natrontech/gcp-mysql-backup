@@ -5,10 +5,10 @@
 Following workflows are implemented in the repository.
 [SARIF](https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning) is used to store the results for an analysis of code scanning tools in the Security tab of the repository.
 
-| Workflow                         | Jobs                            | Trigger                                                       | SARIF upload | Description                                          |
-| :------------------------------- | :------------------------------ | :------------------------------------------------------------ | :----------- | ---------------------------------------------------- |
-| [release.yml](./release.yml)     | see [release chapter](#release) | push tag `v*`, cron `20 10 * * *`, pr on `main`               | -            | Create release with go binaries and docker container |
-| [scorecard.yml](./scorecard.yml) | `analyze`                       | push to `main`, cron: `00 14 * * 1`, change branch protection | yes          | Create OpenSSF analysis and create project score     |
+| Workflow                         | Jobs                            | Trigger                                                       | SARIF upload | Description                                                      |
+| :------------------------------- | :------------------------------ | :------------------------------------------------------------ | :----------- | ---------------------------------------------------------------- |
+| [release.yml](./release.yml)     | see [release chapter](#release) | push tag `v*`, cron `20 10 * * *`, pr on `main`               | -            | Create release with go binaries and docker container             |
+| [scorecard.yml](./scorecard.yml) | `analyze`                       | push to `main`, cron: `00 14 * * 1`, change branch protection | yes          | Create OpenSSF analysis and create project score                 |
 
 ## Release
 
@@ -27,6 +27,12 @@ The docker image provenance is generated using the [SLSA Container Generator](ht
 ### Container SBOM
 
 The SBOMs of the container images are uploaded to a separate package registry (see [SBOM](./../../SECURITY.md#sbom) for more information).
+
+| Action                                   | Release              |
+| :--------------------------------------- | :------------------- |
+| Daily schedule on `main`                 | Release `latest` tag |
+| Merge to `main`                          | Release `latest` tag |
+| Create a new Release with a tag `vX.X.X` | Release `vX.X.X` tag |
 
 ## Scorecards
 
