@@ -4,18 +4,21 @@ metadata:
   name: backup-gcp-mysql
   namespace: mysql-backups
 spec:
-  ttlSecondsAfterFinished: null
-  schedule: "0 5 * * *"
   concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 5
+  schedule: "0 5 * * *"
+  successfulJobsHistoryLimit: 3
   suspend: false
   jobTemplate:
     metadata:
       labels:
         app: backup-gcp-mysql
     spec:
-      parallelism: 1
-      completions: 1
+      activeDeadlineSeconds: 3600  # Kill job after 1 hour
       backoffLimit: 3
+      completions: 1
+      parallelism: 1
+      ttlSecondsAfterFinished: 3600  # Retain job for 1 hour after finish
       template:
         metadata:
           labels:
@@ -24,10 +27,18 @@ spec:
           containers:
           - name: backup-job
             image: ghcr.io/natrontech/gcp-mysql-backup:latest
+            imagePullPolicy: Always
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 10m
+                memory: 32Mi
             env:
               - name: MYSQL_HOST
                 value: "127.0.0.1"
-              - name: PROXY_PORT
+              - name: MYSQL_PORT
                 value: "3306"
               - name: MYSQL_USER
                 valueFrom:
@@ -46,9 +57,10 @@ spec:
               - name: GCP_BUCKET_DIR
                 value: "mysql"
               - name: PROXY_QUIT_URL
-                value: "http://localhost:9091/quitquitquit"
+                value: "http://localhost:3306/quitquitquit"
           - name: cloud-sql-proxy
             image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2
+            imagePullPolicy: Always
             args:
               - '--exit-zero-on-sigterm'
               - '--quitquitquit'
@@ -61,7 +73,6 @@ spec:
               requests:
                 cpu: 250m
                 memory: 256Mi
-            imagePullPolicy: Always
             securityContext:
               runAsNonRoot: true
           restartPolicy: OnFailure
@@ -74,5 +85,3 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 5

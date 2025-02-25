@@ -108,7 +108,7 @@ cosign verify-attestation \
 If you want to download the SBOM of the container image, you can use the following command:
 
 ```bash
-COSIGN_REPOSITORY=ghcr.io/natrontech/sbom cosign verify-attestation \
+cosign verify-attestation \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
