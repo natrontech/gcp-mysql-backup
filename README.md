@@ -31,7 +31,7 @@ This container relies on several environment variables for operation:
 - `MYSQL_DATABASES` (**Required**): Comma-separated list of databases to backup.
 - `GCS_BUCKET` (**Required**): The Google Cloud Storage bucket for storing backups.
 - `GCS_BUCKET_DIR` (**Required**): The directory within the GCS bucket to store backups.
-- `PROXY_PORT` (**Required**): The port on which the MySQL server or proxy is accessible (default 3306).
+- `MYSQL_PORT` (**Required**): The port on which the MySQL server or proxy is accessible (default 3306).
 - `PROXY_QUIT_URL` (**Required**): URL to send the quit command to the Cloud SQL Proxy.
 
 ### Volumes
@@ -45,9 +45,9 @@ This container relies on several environment variables for operation:
 To run the Docker container locally:
 
 ```sh
-docker run -e MYSQL_HOST='your-mysql-host' -e MYSQL_USER='user' -e MYSQL_PASSWORD='password' \
+docker run -e MYSQL_HOST='your-mysql-host' -e MYSQL_PORT='3306' -e MYSQL_USER='user' -e MYSQL_PASSWORD='password' \
 -e MYSQL_DATABASES='db1,db2' -e GCS_BUCKET='your-gcs-bucket' \
--e PROXY_QUIT_URL='http://localhost:9091/quitquitquit' \
+-e PROXY_QUIT_URL='http://localhost:3306/quitquitquit' \
 -v your-local-backup-dir:/backup \
 your-docker-image
 ```
