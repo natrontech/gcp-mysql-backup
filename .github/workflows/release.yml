@@ -67,7 +67,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Syft SBOM generation
-        uses: anchore/sbom-action@9f7302141466aa6482940f15371237e9d9f4c34a # v0.19.0
+        uses: anchore/sbom-action@cee1b8e05ae5b2593a75e197229729eabaa9f8ec # v0.20.2
         with:
           image: ghcr.io/natrontech/gcp-mysql-backup@${{ steps.build-and-push.outputs.digest }}
           format: cyclonedx-json
