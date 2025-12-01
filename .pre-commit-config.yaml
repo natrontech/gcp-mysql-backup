@@ -12,11 +12,11 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-merge-conflict
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.28.0
+    rev: v8.30.0
     hooks:
       - id: gitleaks
   - repo: https://github.com/bridgecrewio/checkov.git
-    rev: 3.2.469
+    rev: 3.2.495
     hooks:
       - id: checkov_container
         args:
