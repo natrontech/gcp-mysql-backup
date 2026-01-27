@@ -171,4 +171,5 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
             --insecure-ignore-tlog \
-            $IMAGE@$DIGEST
+            $IMAGE@$DIGEST > /dev/null
+          echo "SBOM verification successful"
