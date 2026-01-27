@@ -132,6 +132,8 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        with:
+          cosign-release: 'v3.0.4'
 
       - name: Verify provenance of image
         env:
@@ -166,7 +168,7 @@ jobs:
         run: |
           cosign verify-attestation \
             --type cyclonedx \
-            --new-bundle-format=false \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
+            --insecure-ignore-tlog \
             $IMAGE@$DIGEST
