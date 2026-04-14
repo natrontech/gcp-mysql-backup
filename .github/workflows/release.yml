@@ -30,23 +30,23 @@ jobs:
       id-token: write # sign archives with cosign
     steps:
       - name: Checkout repository
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
       - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -58,7 +58,7 @@ jobs:
             type=ref,event=pr
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
@@ -67,7 +67,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Syft SBOM generation
-        uses: anchore/sbom-action@fbfd9c6c189226748411491745178e0c2017392d # v0.20.10
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           image: ghcr.io/natrontech/gcp-mysql-backup@${{ steps.build-and-push.outputs.digest }}
           format: cyclonedx-json
@@ -75,20 +75,19 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
       - name: Cosign sign image
-        # env:
-        #   COSIGN_REPOSITORY: ghcr.io/${{ github.repository_owner }}/signatures
         run: |
-          set -e
+          set -euo pipefail
           cosign sign --yes \
+            --new-bundle-format \
             -a "repo=${{ github.repository }}" \
             -a "workflow=${{ github.workflow }}" \
             -a "ref=${{ github.sha }}" \
             ghcr.io/natrontech/gcp-mysql-backup@${{ steps.build-and-push.outputs.digest }}
       - name: Cosign sign sbom
-        # env:
-        #   COSIGN_REPOSITORY: ghcr.io/${{ github.repository_owner }}/sbom
         run: |
+          set -euo pipefail
           cosign attest --yes \
+            --new-bundle-format \
             --predicate ./gcp-mysql-backup-bom.cdx.json \
             --type cyclonedx \
             --oidc-provider github-actions \
@@ -107,7 +106,6 @@ jobs:
       digest: ${{ needs.docker-publish.outputs.digest }}
       registry-username: ${{ github.actor }}
       provenance-registry-username: ${{ github.actor }}
-      #provenance-repository: ghcr.io/${{ github.repository_owner }}/signatures
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       provenance-registry-password: ${{ secrets.GITHUB_TOKEN }}
@@ -118,29 +116,27 @@ jobs:
     permissions: read-all
     steps:
       - name: Checkout repository
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Login
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
-        with:
-          cosign-release: 'v3.0.4'
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
 
       - name: Verify provenance of image
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/gcp-mysql-backup
           DIGEST: ${{ needs.docker-publish.outputs.digest }}
-          REPOSITORY: ${{ github.repository_owner }}
         run: |
+          set -euo pipefail
           cosign verify-attestation \
             --type slsaprovenance \
             --new-bundle-format=false \
@@ -155,7 +151,9 @@ jobs:
           DIGEST: ${{ needs.docker-publish.outputs.digest }}
           REPOSITORY: ${{ github.repository_owner }}
         run: |
+          set -euo pipefail
           cosign verify \
+            --new-bundle-format \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
             $IMAGE@$DIGEST
@@ -166,10 +164,12 @@ jobs:
           DIGEST: ${{ needs.docker-publish.outputs.digest }}
           REPOSITORY: ${{ github.repository_owner }}
         run: |
+          set -euo pipefail
           cosign verify-attestation \
+            --new-bundle-format \
             --type cyclonedx \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
-            --insecure-ignore-tlog \
+            --policy policy-sbom.cue \
             $IMAGE@$DIGEST > /dev/null
           echo "SBOM verification successful"

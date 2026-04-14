@@ -10,7 +10,7 @@ The contributor will send a response indicating the next steps in handling your 
 
 ## Release verification
 
-The release workflow creates provenance for its builds using the [SLSA standard](https://slsa.dev), which conforms to the [Level 3 specification](https://slsa.dev/spec/v1.0/levels#build-l3).
+The release workflow creates provenance for its builds using the [SLSA standard](https://slsa.dev), which conforms to the [Level 3 specification](https://slsa.dev/spec/v1.2/build-track-basics#build-l3).
 
 All signatures are created by [Cosign](https://github.com/sigstore/cosign) using the [keyless signing](https://docs.sigstore.dev/cosign/verifying/verify/#keyless-verification-using-openid-connect) method.
 
@@ -20,7 +20,7 @@ To verify the release artifacts, you will need the [slsa-verifier](https://githu
 
 ### Version
 
-All of the following commands require the `VERSION` environment variable to be set to the version of the release you want to verify. You can set the variable manually or the the latest version with the following command:
+All of the following commands require the `VERSION` environment variable to be set to the version of the release you want to verify. You can set the variable manually or use the latest version with the following command:
 
 ```bash
 # get the latest release
@@ -59,7 +59,8 @@ As an alternative to the SLSA verifier, you can use `cosign` to verify the prove
 # download policy.cue
 curl -L -O https://raw.githubusercontent.com/natrontech/gcp-mysql-backup/main/policy.cue
 
-# verify the image with cosign (at the moment use `--new-bundle-format=false` as the new format is not yet supported for SLSA provenance)
+# verify the image provenance with cosign
+# note: SLSA provenance uses the old bundle format (--new-bundle-format=false)
 cosign verify-attestation \
   --type slsaprovenance \
   --new-bundle-format=false \
@@ -71,11 +72,13 @@ cosign verify-attestation \
 
 ### Verify signature of container image
 
-The container images are additionally signed with cosign. The signature can be verified with the `cosign` binary.
+The container images are additionally signed with cosign. The signature is stored as an OCI 1.1 referrer in the image repository and can be verified with the `cosign` binary.
+
 **Important**: only the multi-arch image is signed, not the individual platform images.
 
 ```bash
 cosign verify \
+  --new-bundle-format \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
   $IMAGE | jq
@@ -90,17 +93,22 @@ The Software Bill of Materials (SBOM) is generated in CycloneDX JSON format for 
 
 #### Container images
 
-The SBOMs of the container is attestated with Cosign. The SBOMs can be verified with the `cosign` binary.
+The SBOM of the container image is attested with Cosign and stored as an OCI 1.1 referrer in the image repository. The SBOM can be verified with the `cosign` binary.
 
 **Important**: Only the multi-arch image has a SBOM, not the individual platform images.
 
 **Verify provenance of the SBOM**
 
 ```bash
+# download policy-sbom.cue
+curl -L -O https://raw.githubusercontent.com/natrontech/gcp-mysql-backup/main/policy-sbom.cue
+
 cosign verify-attestation \
+  --new-bundle-format \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
+  --policy policy-sbom.cue \
   $IMAGE | jq -r '.payload' | base64 -d | jq
 ```
 
@@ -110,8 +118,10 @@ If you want to download the SBOM of the container image, you can use the followi
 
 ```bash
 cosign verify-attestation \
+  --new-bundle-format \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
+  --policy policy-sbom.cue \
   $IMAGE | jq -r '.payload' | base64 -d | jq -r '.predicate' > sbom.json
 ```
