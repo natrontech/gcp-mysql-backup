@@ -12,7 +12,7 @@ predicate: {
       entryPoint: ".github/workflows/release.yml"
 
       // This condition verifies that the image was generated from the source repository we expect.
-      uri: =~"^git\\+https://github.com/natrontech/gcp-mysql-backup@refs/.*$"
+      uri: =~"^git\\+https://github.com/natrontech/gcp-mysql-backup@refs/tags/v[0-9]+.[0-9]+.[0-9]+$"
     }
   }
 }

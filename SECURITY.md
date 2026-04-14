@@ -80,7 +80,7 @@ The container images are additionally signed with cosign. The signature is store
 cosign verify \
   --new-bundle-format \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
   $IMAGE | jq
 ```
 
@@ -107,7 +107,7 @@ cosign verify-attestation \
   --new-bundle-format \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
   --policy policy-sbom.cue \
   $IMAGE | jq -r '.payload' | base64 -d | jq
 ```
@@ -121,7 +121,7 @@ cosign verify-attestation \
   --new-bundle-format \
   --type cyclonedx \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/.*$' \
+  --certificate-identity-regexp '^https://github.com/natrontech/gcp-mysql-backup/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
   --policy policy-sbom.cue \
   $IMAGE | jq -r '.payload' | base64 -d | jq -r '.predicate' > sbom.json
 ```
